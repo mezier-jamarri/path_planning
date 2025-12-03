@@ -1,4 +1,9 @@
 # Project 3: Path Planning - Python (F23)
+PLEASE SEE VIDEO DEMONSTRATION HERE: https://drive.google.com/file/d/1nNziTw3XkYwEjDJOO265ctcRSdkKDG6Z/view?usp=sharing
+USE COMMAND: python3 path_planner_cli.py -m data/maze2.map --start 48 46 --goal 20 87 --algo bfs
+
+
+---------------------------------------------------------------------------------------------------------
 
 Template code for Project 3 (Path Planning) in Python.
 See [project instructions](https://hellorob.org/projects/p3) for more details.
