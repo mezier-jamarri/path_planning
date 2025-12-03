@@ -4,8 +4,8 @@ import numpy as np
 
 class Cell(object):
     def __init__(self, i, j):
-        self.i = i  # x-axis index (column)
-        self.j = j  # y-axis index (row)
+        self.i = int(i)  # x-axis index (column)
+        self.j = int(j)  # y-axis index (row)
 
 
 """TODO: You may consider defining a class to store your node data. If so, do
@@ -46,7 +46,17 @@ class GridGraph:
         self.visited_cells = []  # Stores which cells have been visited in order for visualization.
 
         # TODO: Define any additional member variables to store node data.
+        
+        # node data arrays (height = rows, width = cols)
+        self.parent_i = np.full((self.height, self.width), -1, dtype=int)
+        self.parent_j = np.full((self.height, self.width), -1, dtype=int)
 
+        # distance from start along current path (can be float or int)
+        self.dist = np.full((self.height, self.width), np.inf, dtype=float)
+
+        # whether the node has been visited (for BFS/DFS/A*)
+        self.visited = np.zeros((self.height, self.width), dtype=bool)
+        
     def as_string(self):
         """Returns the map data as a string for visualization."""
         map_list = self.cell_odds.astype(str).tolist()
@@ -115,8 +125,21 @@ class GridGraph:
     def is_cell_occupied(self, i, j):
         """Checks whether the provided index in the graph is occupied (i.e. above
         the threshold.)"""
-        return self.cell_odds[j, i] >= self.threshold
+        # Convert to numpy arrays (safe for scalars)
+        i = np.asarray(i)
+        j = np.asarray(j)
 
+    # Out-of-bounds = collision
+        oob = (i < 0) | (i >= self.width) | (j < 0) | (j >= self.height)
+
+    # Read costs only for in-bounds indices
+        inb = ~oob
+        costs = np.zeros_like(i, dtype=int)
+        costs[inb] = self.cell_odds[j[inb], i[inb]].astype(int)
+
+    # Occupied if cost >= 127 OR out-of-bounds
+        return oob | (costs >= 127)
+    
     def set_collision_radius(self, r):
         """Sets the collision radius and precomputes some values to help check
         for collisions.
@@ -155,7 +178,16 @@ class GridGraph:
         None if the node has no parent. This function is used to trace back the
         path after graph search."""
         # TODO (P3): Return the parent of the node at the cell.
-        return None
+        i, j = cell.i, cell.j
+
+        pi = self.parent_i[j, i]
+        pj = self.parent_j[j, i]
+
+        # if no parent recorded
+        if pi == -1 or pj == -1:
+            return None
+
+        return Cell(pi, pj)
 
     def init_graph(self):
         """Initializes the node data in the graph in preparation for graph search.
@@ -167,6 +199,11 @@ class GridGraph:
         self.visited_cells = []  # Reset visited cells for visualization.
 
         # TODO (P3): Initialize your graph nodes.
+        #reset all node data arrays
+        self.parent_i.fill(-1)
+        self.parent_j.fill(-1)
+        self.dist.fill(np.inf)
+        self.visited.fill(False)
 
     def find_neighbors(self, i, j):
         """Returns a list of the neighbors of the given cell. This should not
@@ -177,4 +214,17 @@ class GridGraph:
         # bounds of the graph.
 
         # HINT: The function is_cell_in_bounds() might come in handy.
+        # 4-connected neighbors: right, left, down, up
+        directions = [
+            (1, 0),   # right
+            (-1, 0),  # left
+            (0, 1),   # down
+            (0, -1)   # up
+        ]
+
+        for di, dj in directions:
+            ni, nj = i + di, j + dj
+            if self.is_cell_in_bounds(ni, nj):
+                nbrs.append((ni, nj))
+
         return nbrs

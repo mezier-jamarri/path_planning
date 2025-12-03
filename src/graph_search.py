@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 from .graph import Cell
 from .utils import trace_path
 
@@ -46,6 +47,60 @@ def breadth_first_search(graph, start, goal):
         goal: Goal cell as a Cell object.
     """
     graph.init_graph()  # Make sure all the node values are reset.
+    
+    # Queue (FIFO) for BFS
+    q = deque()
+
+    # Start and goal indices
+    si, sj = start.i, start.j
+    gi, gj = goal.i, goal.j
+
+    # Optional: if start or goal are in collision, abort
+    if graph.check_collision(si, sj) or graph.check_collision(gi, gj):
+        return []
+
+    # Initialize the start node
+    graph.visited[sj, si] = True
+    graph.dist[sj, si] = 0.0
+    graph.parent_i[sj, si] = -1
+    graph.parent_j[sj, si] = -1
+
+    # Log start as visited for visualization
+    graph.visited_cells.append(Cell(si, sj))
+
+    # Put start into queue
+    q.append(Cell(si, sj))
+
+    while q:
+        current = q.popleft()
+        ci, cj = current.i, current.j
+
+        # Check for goal
+        if ci == gi and cj == gj:
+            # Build path from goal back to start using parents
+            return trace_path(current, graph)
+
+        # Expand neighbors
+        for ni, nj in graph.find_neighbors(ci, cj):
+            # Skip cells that are in collision
+            if graph.check_collision(ni, nj):
+                continue
+
+            # Skip already visited cells
+            if graph.visited[nj, ni]:
+                continue
+
+            # Mark neighbor as visited
+            graph.visited[nj, ni] = True
+            graph.dist[nj, ni] = graph.dist[cj, ci] + 1.0
+            graph.parent_i[nj, ni] = ci
+            graph.parent_j[nj, ni] = cj
+
+            # Log visited cell for web app visualization
+            graph.visited_cells.append(Cell(ni, nj))
+
+            # Add neighbor to queue
+            q.append(Cell(ni, nj))
 
     """TODO (P3): Implement BFS."""
 

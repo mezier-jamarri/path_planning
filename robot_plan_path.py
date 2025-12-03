@@ -35,12 +35,15 @@ if __name__ == "__main__":
     start_pose = robot.read_slam_pose()
     start = graph.pos_to_cell(*start_pose[:2])
 
-    path = []
-    # TODO: Call graph search function and put the result in path.
+# Call your graph search algorithm here to compute a path from start to goal.
+    path = breadth_first_search(graph, start, goal)
 
-    # Send the path to the robot.
-    print(f"Found path of length {len(path)}. Driving to the goal!")
-    robot.drive_path(cells_to_poses(path, graph))
-
+    if not path:
+        print("No path found, not driving.")
+    else:
+        # Send the path to the robot.
+        print(f"Found path of length {len(path)}. Driving to the goal!")
+        robot.drive_path(cells_to_poses(path, graph))
+    
     # Genererate the path file for visualization.
     generate_plan_file(graph, start, goal, path)
